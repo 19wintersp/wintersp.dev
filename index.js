@@ -20,6 +20,15 @@ try {
 	addEventListener("resize", updateCanvas);
 	updateCanvas();
 
+	let targetCursorPos = [0, 0];
+	const updateCursor = (event) => {
+		targetCursorPos = [event.clientX, canvas.height - event.clientY];
+	};
+
+	addEventListener("mousemove", updateCursor);
+	addEventListener("mouseenter", updateCursor);
+	addEventListener("mouseover", updateCursor);
+
 	const P = [];
 	const p = Array(256).fill(0).map((x, y) => x + y);
 	while (p.length > 0)
@@ -78,6 +87,7 @@ try {
 		uniform uint perm12[256];
 		uniform vec3 grad[12];
 		uniform vec2 size;
+		uniform vec2 cursor;
 
 		in vec2 vxy;
 		in vec3 tex;
@@ -142,7 +152,14 @@ try {
 		}
 
 		int simplex_quant(vec3 v_in) {
-			return int(floor(simplex(v_in * 0.5) * 3.0 + simplex(v_in * 2.0) * 0.5));
+			float x = 0.0;
+			x += simplex(v_in * 0.5) * 3.0;
+			x += simplex(v_in * 2.0) * 0.5;
+
+			float cursorDist = length(v_in.xy / cell - cursor);
+			x += 1.0 + cos(min(cursorDist * 0.01, 3.14159));
+
+			return int(floor(x));
 		}
 
 		float kernel(vec3 c, float d) {
@@ -153,9 +170,9 @@ try {
 
 			if (q1 == q2 && q1 == q3 && q1 == q4) return 0.0;
 
-			int m = min(min(q1, q2), min(q3, q4));
+			int m = abs(min(min(q1, q2), min(q3, q4)));
 
-			return (m == 0) ? 1.0 : 0.5;
+			return ((m % 5) == 0) ? 1.0 : 0.5;
 		}
 
 		void main() {
@@ -212,6 +229,7 @@ try {
 	const cellLoc = gl.getUniformLocation(prog, "cell");
 	const sizeLoc = gl.getUniformLocation(prog, "size");
 	const timeLoc = gl.getUniformLocation(prog, "time");
+	const cursorLoc = gl.getUniformLocation(prog, "cursor");
 
 	const posLoc = gl.getAttribLocation(prog, "pos");
 	const permLoc = gl.getUniformLocation(prog, "perm");
@@ -230,11 +248,24 @@ try {
 	gl.uniform3fv(gradLoc, grad);
 
 	const tRef = performance.now();
-	const render = () => {
+	let cursorPos;
+
+	const render = (pt) => {
+		if (cursorPos) {
+			const dt = Math.max(performance.now() - pt, 1);
+			const dx = targetCursorPos[0] - cursorPos[0];
+			const dy = targetCursorPos[1] - cursorPos[1];
+			cursorPos[0] += dx * dt / 20;
+			cursorPos[1] += dy * dt / 20;
+		} else {
+			cursorPos = targetCursorPos;
+		}
+
 		gl.useProgram(prog);
 
 		gl.uniform2f(sizeLoc, canvas.clientWidth, canvas.clientHeight);
 		gl.uniform1f(timeLoc, (performance.now() - tRef) / 1000);
+		gl.uniform2f(cursorLoc, ...cursorPos);
 
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
