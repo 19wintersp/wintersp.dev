@@ -1,6 +1,5 @@
 body {
 	margin: 0px;
-	padding: 64px;
 
 	display: flex;
 	justify-content: space-between;
@@ -13,16 +12,29 @@ body {
 	user-select: none;
 }
 
-@media (max-width: 400px) {
-	body {
-		padding: 32px;
+main {
+	box-sizing: border-box;
+	padding: 64px 64px 32px;
+	height: 100vh;
+
+	display: flex;
+	flex-direction: column;
+	gap: 48px;
+
+	backdrop-filter: blur(4px);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+	main {
+		background-color: #0c0d0d;
 	}
 }
 
-main {
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
+@media (max-width: 400px) {
+	main {
+		padding: 32px;
+		width: 100vw;
+	}
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -57,7 +69,7 @@ main {
 
 	li {
 		animation: ease-out .5s both link;
-		animation-delay: calc(var(--n) * .1s + .2s);
+		animation-delay: calc(var(--n) * .1s + 1.2s);
 	}
 }
 
@@ -147,45 +159,25 @@ li > a > span:last-child {
 }
 
 footer {
-	position: fixed;
-	bottom: 0px;
-	right: 0px;
-
-	padding: 16px;
-	max-width: calc(100vw - 32px);
-
 	display: flex;
-	align-items: center;
-	gap: 8px;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: flex-end;
+	flex-grow: 1;
 
 	font-size: 10px;
-
-	backdrop-filter: blur(8px);
-	background-color: #000a;
-	color: #fff;
-	opacity: 50%;
-
-	transition: opacity .5s ease;
-}
-
-@media (prefers-reduced-transparency: reduce) {
-	footer {
-		background-color: #0c0d0d;
-	}
-}
-
-footer:is(:hover, :focus) {
-	opacity: 75%;
 }
 
 footer > p {
 	margin: 0px;
+
+	opacity: 25%;
+
+	transition: opacity .5s ease;
 }
 
-footer > div {
-	height: 1em;
-	width: 1px;
-	background-color: #fff;
+footer > p:is(:hover, :focus) {
+	opacity: 75%;
 }
 
 footer a {

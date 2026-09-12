@@ -142,20 +142,24 @@ try {
 		}
 
 		int simplex_quant(vec3 v_in) {
-			return int(floor(simplex(v_in) * 3.0));
+			return int(floor(simplex(v_in * 0.5) * 3.0 + simplex(v_in * 2.0) * 0.5));
 		}
 
 		float kernel(vec3 c, float d) {
-			int a = simplex_quant(c);
-			return (
-				a != simplex_quant(c + vec3(  -d,  0.0, 0.0)) ||
-				a != simplex_quant(c + vec3(  -d,    d, 0.0)) ||
-				a != simplex_quant(c + vec3( 0.0,    d, 0.0))
-			) ? 1.0 : 0.0;
+			int q1 = simplex_quant(c);
+			int q2 = simplex_quant(c + vec3(  -d,  0.0, 0.0));
+			int q3 = simplex_quant(c + vec3(  -d,    d, 0.0));
+			int q4 = simplex_quant(c + vec3( 0.0,    d, 0.0));
+
+			if (q1 == q2 && q1 == q3 && q1 == q4) return 0.0;
+
+			int m = min(min(q1, q2), min(q3, q4));
+
+			return (m == 0) ? 1.0 : 0.5;
 		}
 
 		void main() {
-			float w = 0.25 * (
+			float w = 0.15 * (
 				kernel(tex + vec3(-.25, -.25, 0.0) * cell, cell) +
 				kernel(tex + vec3( .25, -.25, 0.0) * cell, cell) +
 				kernel(tex + vec3(-.25,  .25, 0.0) * cell, cell) +
@@ -163,9 +167,15 @@ try {
 			);
 
 			vec2 screen = tex.xy / cell;
-			float k = screen.x + 0.6 * (size.y - screen.y) - 200.0;
-			w *= .5 * clamp(2.5 * k / max(size.x, size.y), 0.2, 1.0);
+
+			// fade-in
 			w *= sin(min(time / 2.0, 1.0) * 1.5708);
+
+			// secondary scaling
+			w *= .8 + .2 * (
+				simplex(vec3(screen / 512.0, tex.z)) +
+				simplex(vec3(screen / 2048.0, 2.0 * tex.z))
+			);
 
 			fragColor = vec4(w, w, w, 1.0);
 		}
